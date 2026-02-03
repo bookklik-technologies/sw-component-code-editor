@@ -2,7 +2,9 @@
 
 A plugin that allows you to edit the code of a component that is selected on the canvas using CodeMirror with syntax highlighting and advanced editing features.
 
-![GrapesJS Component with CodeMirror](https://raw.githubusercontent.com/bookklik-technologies/sw-component-code-editor/master/preview.png)
+| HTML                                                                                                                                  | CSS                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| <p align="center"><img src="https://raw.githubusercontent.com/bookklik-technologies/sw-component-code-editor/master/preview.png"></p> | <p align="center"><img src="https://raw.githubusercontent.com/bookklik-technologies/sw-component-code-editor/master/preview_css.png"></p> |
 
 ## Features
 
@@ -16,18 +18,19 @@ A plugin that allows you to edit the code of a component that is selected on the
 
 > Recommended: use [grapesjs-parser-postcss](https://github.com/artf/grapesjs-parser-postcss) with this plugin to avoid issues with `styles` as the default parser is inconsistent and will add a lot of extra rules to your css, more explained [here](https://grapesjs.com/docs/guides/Custom-CSS-parser.html#cssom-results-are-inconsistent)
 
-
-| Chrome Result                                 | PostCSS Result                                |
-| ----------------------------------------------- | ----------------------------------------------- |
-| <p align="center"><img src="default.png"></p> | <p align="center"><img src="postcss.png"></p> |
-
 ### HTML
 
 ```html
-<link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
+<link
+  href="https://unpkg.com/grapesjs/dist/css/grapes.min.css"
+  rel="stylesheet"
+/>
 <script src="https://unpkg.com/grapesjs"></script>
 
-<link href="https://unpkg.com/sw-component-code-editor/dist/sw-component-code-editor.min.css" rel="stylesheet">
+<link
+  href="https://unpkg.com/sw-component-code-editor/dist/sw-component-code-editor.min.css"
+  rel="stylesheet"
+/>
 <script src="https://unpkg.com/sw-component-code-editor"></script>
 
 <div id="gjs"></div>
@@ -37,8 +40,8 @@ A plugin that allows you to edit the code of a component that is selected on the
 
 ```js
 const editor = grapesjs.init({
-	container: '#gjs',
-  height: '100%',
+  container: "#gjs",
+  height: "100%",
   fromElement: true,
   storageManager: false,
   //...
@@ -48,26 +51,27 @@ const editor = grapesjs.init({
         buttons: [
           //...
           {
-            attributes: { title: 'Open Code' },
-            className: 'fa fa-code',
-            command: 'open-code',
-            id: 'open-code'
-          }
+            attributes: { title: "Open Code" },
+            className: "fa fa-code",
+            command: "open-code",
+            id: "open-code",
+          },
           //...
         ],
-        id: 'views'
-      }
-    ]
+        id: "views",
+      },
+    ],
   },
   //...
-  plugins: ['sw-component-code-editor'],
+  plugins: ["sw-component-code-editor"],
 });
 ```
 
 ### CSS
 
 ```css
-body, html {
+body,
+html {
   margin: 0;
   height: 100%;
 }
@@ -75,32 +79,30 @@ body, html {
 
 ## Keyboard Shortcuts
 
-
-| Shortcut                       | Action                 |
-| -------------------------------- | ------------------------ |
-| `Ctrl+S` / `Cmd+S`             | Save (applies changes) |
-| `Ctrl+Z` / `Cmd+Z`             | Undo                   |
-| `Ctrl+Y` / `Cmd+Y`             | Redo                   |
-| `Ctrl+F` / `Cmd+F`             | Find                   |
-| `Tab`                          | Indent                 |
+| Shortcut           | Action                 |
+| ------------------ | ---------------------- |
+| `Ctrl+S` / `Cmd+S` | Save (applies changes) |
+| `Ctrl+Z` / `Cmd+Z` | Undo                   |
+| `Ctrl+Y` / `Cmd+Y` | Redo                   |
+| `Ctrl+F` / `Cmd+F` | Find                   |
+| `Tab`              | Indent                 |
 
 ## Options
 
-
-| Option name       | Default value              | Description                                                                                                                                                        |
-| ------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `panelId`         | `views-container`          | Id of panel to append code editor.                                                                                                                                 |
-| `appendTo`        | `.gjs-pn-views-container`  | Append code editor to an element not`views-container` (class or id).                                                                                               |
-| `openState`       | `{ pn: '35%', cv: '65%' }` | Determine width of views panel (`pn`) and canvas (`cv`) in the open state.                                                                                         |
-| `closedState`     | `{ pn: '15%', cv: '85%' }` | Determine width of views panel (`pn`) and canvas (`cv`) in the closed state.                                                                                       |
-| `codeViewOptions` | `{}`                       | CodeMirror configuration options. Pass additional extensions via `extensions` array.                                                                               |
-| `preserveWidth`   | `false`                    | Stop resizing`openState` and `closedState`. Preserve views panel and canvas sizes.                                                                                 |
-| `clearData`       | `false`                    | Remove all`gjs-data` attributes from the component.                                                                                                                |
-| `editJs`          | `false`                    | Lets you edit component scripts`allowScripts` must be set to true.                                                                                                 |
-| `cleanCssBtn`     | `true`                     | Used to remove css from the Selector Manager.                                                                                                                      |
-| `htmlBtnText`     | `Apply`                    | Save HTML button text.                                                                                                                                             |
-| `cssBtnText`      | `Apply`                    | Save CSS button text.                                                                                                                                              |
-| `cleanCssBtnText` | `Delete`                   | Clean CSS button text.                                                                                                                                             |
+| Option name       | Default value              | Description                                                                          |
+| ----------------- | -------------------------- | ------------------------------------------------------------------------------------ |
+| `panelId`         | `views-container`          | Id of panel to append code editor.                                                   |
+| `appendTo`        | `.gjs-pn-views-container`  | Append code editor to an element not`views-container` (class or id).                 |
+| `openState`       | `{ pn: '35%', cv: '65%' }` | Determine width of views panel (`pn`) and canvas (`cv`) in the open state.           |
+| `closedState`     | `{ pn: '15%', cv: '85%' }` | Determine width of views panel (`pn`) and canvas (`cv`) in the closed state.         |
+| `codeViewOptions` | `{}`                       | CodeMirror configuration options. Pass additional extensions via `extensions` array. |
+| `preserveWidth`   | `false`                    | Stop resizing`openState` and `closedState`. Preserve views panel and canvas sizes.   |
+| `clearData`       | `false`                    | Remove all`gjs-data` attributes from the component.                                  |
+| `editJs`          | `false`                    | Lets you edit component scripts`allowScripts` must be set to true.                   |
+| `cleanCssBtn`     | `true`                     | Used to remove css from the Selector Manager.                                        |
+| `htmlBtnText`     | `Apply`                    | Save HTML button text.                                                               |
+| `cssBtnText`      | `Apply`                    | Save CSS button text.                                                                |
+| `cleanCssBtnText` | `Delete`                   | Clean CSS button text.                                                               |
 
 ### CodeMirror Specific Options
 
@@ -110,7 +112,7 @@ The `codeViewOptions` object accepts CodeMirror configuration. You can pass addi
 codeViewOptions: {
   extensions: [
     // Add additional CodeMirror extensions here
-  ]
+  ];
 }
 ```
 
@@ -120,22 +122,25 @@ codeViewOptions: {
 
 ## Download
 
-* CDN
-  * `https://unpkg.com/sw-component-code-editor`
-* NPM
-  * `npm i sw-component-code-editor`
-* GIT
-  * `git clone https://github.com/bookklik-technologies/sw-component-code-editor.git`
+- CDN
+  - `https://unpkg.com/sw-component-code-editor`
+- NPM
+  - `npm i sw-component-code-editor`
+- GIT
+  - `git clone https://github.com/bookklik-technologies/sw-component-code-editor.git`
 
 ## Usage
 
 Directly in the browser
 
 ```html
-<link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet"/>
+<link
+  href="https://unpkg.com/grapesjs/dist/css/grapes.min.css"
+  rel="stylesheet"
+/>
 <script src="https://unpkg.com/grapesjs"></script>
 
-<link href="./dist/sw-component-code-editor.min.css" rel="stylesheet">
+<link href="./dist/sw-component-code-editor.min.css" rel="stylesheet" />
 <script src="./dist/sw-component-code-editor.min.js"></script>
 
 <div id="gjs"></div>
@@ -180,17 +185,19 @@ Adding after `editor` initialization
 ```js
 const pn = editor.Panels;
 const panelViews = pn.addPanel({
-  id: 'views'
+  id: "views",
 });
-panelViews.get('buttons').add([{
-  attributes: {
-     title: 'Open Code'
+panelViews.get("buttons").add([
+  {
+    attributes: {
+      title: "Open Code",
+    },
+    className: "fa fa-file-code-o",
+    command: "open-code",
+    togglable: false, //do not close when button is clicked again
+    id: "open-code",
   },
-  className: 'fa fa-file-code-o',
-  command: 'open-code',
-  togglable: false, //do not close when button is clicked again
-  id: 'open-code'
-}]);
+]);
 ```
 
 ## Development
