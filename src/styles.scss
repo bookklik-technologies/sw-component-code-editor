@@ -2,94 +2,118 @@
 $prefix: 'gjs-' !default;
 
 .code-panel {
-    text-align: left;
-    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
     height: 100%;
+    background-color: #1e1e1e;
     overflow: hidden;
+    text-align: left;
 }
 
 .code-panel section {
-    flex: 1;
-    height: 50%;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #252526;
+    overflow: hidden;
+    /* transition removed to prevent layout issues */
+}
+
+.code-panel section.active {
+    flex: 1 1 auto; /* Grow to fill space */
+    min-height: 0; /* Important for scrolling */
+    display: flex; /* Ensure it stays flex container */
+}
+
+.code-panel section:not(.active) {
+    flex: 0 0 auto; /* Collapse to content (header) */
+    height: auto;
 }
 
 .code-panel section .codepanel-separator {
     display: flex;
     justify-content: space-between;
-    padding-left: 0.6rem;
-    padding-right: 0.6rem;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: #18181B;
+    cursor: pointer;
+    user-select: none;
+    height: 30px;
+    
+    &:hover {
+        background-color: #09090B;
+    }
 }
 
 .code-panel section .codepanel-label {
-    margin-top: 5px;
-    line-height: 20px;
-    font-size: 13px;
-    color: #aaa;
-    user-select: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: #cccccc;
     text-transform: uppercase;
+    display: flex;
+    align-items: center; // For arrow icon if added
+    
+    &::before {
+        content: '►'; // Right arrow
+        font-size: 10px;
+        margin-right: 6px;
+        transition: transform 0.2s ease;
+        color: #cccccc;
+        display: inline-block;
+    }
+}
+
+.code-panel section.active .codepanel-label::before {
+    transform: rotate(90deg); // Down arrow
 }
 
 .cp-btn-container {
     display: flex;
-    justify-content: space-evenly;
+    gap: 5px;
 
     & .#{$prefix}btn-prim {
-        margin: 2.5px;
+        margin: 0;
+        padding: 2px 8px;
+        font-size: 11px;
+        height: 20px;
+        line-height: 18px;
     }
-}
-
-.gutter {
-    cursor: ns-resize;
-    position: relative;
-    background-color: rgba(0, 0, 0, 0.2);
-}
-
-.gutter:after {
-    content: '';
-    display: block;
-    height: 8px;
-    width: 100%;
-    position: absolute;
-    top: -3px;
-    z-index: 150;
 }
 
 .code-panel .CodeMirror {
     height: 100%;
 }
 
-/* Monaco Editor Styles */
-.code-panel .monaco-editor {
-    border: 1px solid #3c3c3c;
-    height: calc(100% - 30px) !important;
+/* CodeMirror Editor Styles */
+.code-panel .cm-editor {
+    border: none !important; /* Remove border in accordion */
+    height: 100% !important;
 }
 
-.code-panel .monaco-editor .margin {
+.code-panel .cm-scroller {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.code-panel .cm-gutters {
     background-color: #1e1e1e;
+    color: #858585;
+    border-right: 1px solid #333;
 }
 
-.code-panel .monaco-editor .monaco-editor-background {
-    background-color: #1e1e1e;
+.codepanel-content {
+    flex: 1; /* Grow inside the section */
+    height: 100%; /* Ensure full height */
+    overflow: hidden; /* Hide overflow, CodeMirror handles scrolling */
+    display: none;
+    position: relative;
 }
 
-/* Ensure proper sizing for Monaco containers */
-.code-panel section {
-    display: flex;
-    flex-direction: column;
-}
-
-.code-panel section > div:last-child {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.code-panel section > div:last-child > div {
-    flex: 1;
+.code-panel section.active .codepanel-content {
+    display: block;
 }
 
 .cp-delete-css {
-    margin-left: 70%;
+    margin-left: auto;
 }
 
 .#{$prefix}pn-views {

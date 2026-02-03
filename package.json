@@ -1,16 +1,16 @@
 {
-  "name": "grapesjs-component-monaco-editor",
-  "version": "1.0.6",
-  "description": "Grapesjs Component Monaco Editor",
-  "main": "dist/grapesjs-component-monaco-editor.min.js",
+  "name": "sw-component-code-editor",
+  "version": "2.0.19",
+  "description": "SW Component Code Editor - GrapesJS plugin with CodeMirror",
+  "main": "dist/sw-component-code-editor.min.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/a-hakim/grapesjs-component-monaco-editor.git"
+    "url": "https://github.com/bookklik-technologies/sw-component-code-editor.git"
   },
   "scripts": {
     "start": "set NODE_OPTIONS=--openssl-legacy-provider && grapesjs-cli serve",
-    "build": "set NODE_OPTIONS=--openssl-legacy-provider && grapesjs-cli build",
-    "build:css": "sass src/styles.scss dist/grapesjs-component-monaco-editor.min.css --style compressed",
+    "build": "set NODE_OPTIONS=--openssl-legacy-provider && grapesjs-cli build && npm run build:css",
+    "build:css": "sass src/styles.scss dist/sw-component-code-editor.min.css --style compressed",
     "bump": "npm version patch -m 'Bump v%s'"
   },
   "keywords": [
@@ -18,16 +18,19 @@
     "plugin",
     "component",
     "code-editor",
-    "monaco-editor"
+    "codemirror"
   ],
   "devDependencies": {
     "grapesjs-cli": "^1.0.12",
-    "monaco-editor-webpack-plugin": "^7.1.0",
     "sass": "^1.89.2"
   },
-  "author": "A.Hakim",
+  "author": "Bookklik Technologies",
   "license": "MIT",
   "dependencies": {
-    "split.js": "^1.6.2"
+    "codemirror": "^6.0.1",
+    "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-css": "^6.3.1",
+    "@codemirror/commands": "^6.7.1",
+    "@uiw/codemirror-theme-vscode": "^4.23.7"
   }
 }

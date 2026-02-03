@@ -1,22 +1,18 @@
-# GrapesJS Component with Monaco Editor
+# GrapesJS Component with CodeMirror
 
-A plugin that allows you to edit the code of a component that is selected on the canvas using Monaco Editor (VS Code's editor) with syntax highlighting, auto-formatting, and advanced editing features.
+A plugin that allows you to edit the code of a component that is selected on the canvas using CodeMirror with syntax highlighting and advanced editing features.
 
-![GrapesJS Component with Monaco Editor](https://raw.githubusercontent.com/a-hakim/grapesjs-component-monaco-editor/master/preview.png)
-
-[VIEW DEMO - https://dev.use.senangwebs.com/maker/grapesjs-component-monaco-editor-demo](https://dev.use.senangwebs.com/maker/grapesjs-component-monaco-editor-demo)
+![GrapesJS Component with CodeMirror](https://raw.githubusercontent.com/bookklik-technologies/sw-component-code-editor/master/preview.png)
 
 ## Features
 
-- **Monaco Editor Integration**: Full VS Code editor experience with syntax highlighting
-- **Auto-formatting**: Automatic code formatting for HTML and CSS (Ctrl+Shift+F / Cmd+Shift+F)
-- **Split View**: Resizable HTML and CSS editors in a split-pane layout
+- **CodeMirror Integration**: Full code editor experience with syntax highlighting
+- **Accordion Layout**: Toggle between HTML and CSS editors (HTML active by default)
 - **Real-time Preview**: Live updates as you edit your code
-- **Dark Theme**: Professional dark theme matching VS Code
-- **Keyboard Shortcuts**: Standard VS Code shortcuts supported
-- **Error Detection**: Built-in syntax error detection and highlighting
+- **Dark Theme**: Professional VS Code dark theme via @uiw/codemirror-theme-vscode
+- **Keyboard Shortcuts**: Standard editor shortcuts supported
 - **IntelliSense**: Code completion and suggestions
-- **Fallback Support**: Graceful fallback to textarea if Monaco fails to load
+- **Fallback Support**: Graceful fallback to textarea if CodeMirror fails to load
 
 > Recommended: use [grapesjs-parser-postcss](https://github.com/artf/grapesjs-parser-postcss) with this plugin to avoid issues with `styles` as the default parser is inconsistent and will add a lot of extra rules to your css, more explained [here](https://grapesjs.com/docs/guides/Custom-CSS-parser.html#cssom-results-are-inconsistent)
 
@@ -31,8 +27,8 @@ A plugin that allows you to edit the code of a component that is selected on the
 <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
 <script src="https://unpkg.com/grapesjs"></script>
 
-<link href="https://unpkg.com/grapesjs-component-monaco-editor/dist/grapesjs-component-monaco-editor.min.css" rel="stylesheet">
-<script src="https://unpkg.com/grapesjs-component-monaco-editor"></script>
+<link href="https://unpkg.com/sw-component-code-editor/dist/sw-component-code-editor.min.css" rel="stylesheet">
+<script src="https://unpkg.com/sw-component-code-editor"></script>
 
 <div id="gjs"></div>
 ```
@@ -64,7 +60,7 @@ const editor = grapesjs.init({
     ]
   },
   //...
-  plugins: ['grapesjs-component-monaco-editor'],
+  plugins: ['sw-component-code-editor'],
 });
 ```
 
@@ -82,12 +78,11 @@ body, html {
 
 | Shortcut                       | Action                 |
 | -------------------------------- | ------------------------ |
-| `Ctrl+Shift+F` / `Cmd+Shift+F` | Format code            |
 | `Ctrl+S` / `Cmd+S`             | Save (applies changes) |
 | `Ctrl+Z` / `Cmd+Z`             | Undo                   |
 | `Ctrl+Y` / `Cmd+Y`             | Redo                   |
 | `Ctrl+F` / `Cmd+F`             | Find                   |
-| `Ctrl+H` / `Cmd+H`             | Find and Replace       |
+| `Tab`                          | Indent                 |
 
 ## Options
 
@@ -98,7 +93,7 @@ body, html {
 | `appendTo`        | `.gjs-pn-views-container`  | Append code editor to an element not`views-container` (class or id).                                                                                               |
 | `openState`       | `{ pn: '35%', cv: '65%' }` | Determine width of views panel (`pn`) and canvas (`cv`) in the open state.                                                                                         |
 | `closedState`     | `{ pn: '15%', cv: '85%' }` | Determine width of views panel (`pn`) and canvas (`cv`) in the closed state.                                                                                       |
-| `codeViewOptions` | `{}`                       | Monaco editor options. ([Monaco Editor Options](https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.IStandaloneEditorConstructionOptions.html)) |
+| `codeViewOptions` | `{}`                       | CodeMirror configuration options. Pass additional extensions via `extensions` array.                                                                               |
 | `preserveWidth`   | `false`                    | Stop resizing`openState` and `closedState`. Preserve views panel and canvas sizes.                                                                                 |
 | `clearData`       | `false`                    | Remove all`gjs-data` attributes from the component.                                                                                                                |
 | `editJs`          | `false`                    | Lets you edit component scripts`allowScripts` must be set to true.                                                                                                 |
@@ -107,19 +102,15 @@ body, html {
 | `cssBtnText`      | `Apply`                    | Save CSS button text.                                                                                                                                              |
 | `cleanCssBtnText` | `Delete`                   | Clean CSS button text.                                                                                                                                             |
 
-### Monaco Editor Specific Options
+### CodeMirror Specific Options
 
-The `codeViewOptions` object accepts all Monaco Editor configuration options. Common options include:
+The `codeViewOptions` object accepts CodeMirror configuration. You can pass additional extensions:
 
 ```js
 codeViewOptions: {
-  theme: 'vs-dark', // or 'vs', 'hc-black'
-  fontSize: 14,
-  minimap: { enabled: false },
-  wordWrap: 'on',
-  formatOnType: true,
-  formatOnPaste: true,
-  automaticLayout: true
+  extensions: [
+    // Add additional CodeMirror extensions here
+  ]
 }
 ```
 
@@ -127,23 +118,14 @@ codeViewOptions: {
 
 > `cleanCssBtn`: When you delete a selector in the `code-editor` it is still in the `Selector Manager` therefore it will still affect the component after saving, this button removes the selector from both the `code-editor` and `Selector Manager`. Only valid css rules can be removed eg `.class{ color: blue }`
 
-## Auto-formatting
-
-The plugin includes automatic code formatting for both HTML and CSS:
-
-- **HTML**: Proper indentation, tag formatting, and structure
-- **CSS**: Property alignment, selector formatting, and consistent spacing
-- **Trigger**: Automatic on content load or manual via `Ctrl+Shift+F` / `Cmd+Shift+F`
-- **Fallback**: Custom formatting algorithms if Monaco's built-in formatter fails
-
 ## Download
 
 * CDN
-  * `https://unpkg.com/grapesjs-component-monaco-editor`
+  * `https://unpkg.com/sw-component-code-editor`
 * NPM
-  * `npm i grapesjs-component-monaco-editor`
+  * `npm i sw-component-code-editor`
 * GIT
-  * `git clone https://github.com/a-hakim/grapesjs-component-monaco-editor.git`
+  * `git clone https://github.com/bookklik-technologies/sw-component-code-editor.git`
 
 ## Usage
 
@@ -153,8 +135,8 @@ Directly in the browser
 <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet"/>
 <script src="https://unpkg.com/grapesjs"></script>
 
-<link href="./dist/grapesjs-component-monaco-editor.min.css" rel="stylesheet">
-<script src="./dist/grapesjs-component-monaco-editor.min.js"></script>
+<link href="./dist/sw-component-code-editor.min.css" rel="stylesheet">
+<script src="./dist/sw-component-code-editor.min.js"></script>
 
 <div id="gjs"></div>
 
@@ -163,9 +145,9 @@ Directly in the browser
       container: '#gjs',
       // ...
       panels: { /* add panel button with command open-code */}
-      plugins: ['grapesjs-component-monaco-editor'],
+      plugins: ['sw-component-code-editor'],
       pluginsOpts: {
-        'grapesjs-component-monaco-editor': { /* options */ }
+        'sw-component-code-editor': { /* options */ }
       }
   });
 </script>
@@ -175,9 +157,9 @@ Modern javascript
 
 ```js
 import grapesjs from 'grapesjs';
-import plugin from 'grapesjs-component-monaco-editor';
+import plugin from 'sw-component-code-editor';
 import 'grapesjs/dist/css/grapes.min.css';
-import 'grapesjs-component-monaco-editor/dist/grapesjs-component-monaco-editor.min.css';
+import 'sw-component-code-editor/dist/sw-component-code-editor.min.css';
 
 const editor = grapesjs.init({
   container : '#gjs',
@@ -216,8 +198,8 @@ panelViews.get('buttons').add([{
 Clone the repository
 
 ```sh
-$ git clone https://github.com/a-hakim/grapesjs-component-monaco-editor.git
-$ cd grapesjs-component-monaco-editor
+$ git clone https://github.com/bookklik-technologies/sw-component-code-editor.git
+$ cd sw-component-code-editor
 ```
 
 Install dependencies
@@ -246,12 +228,12 @@ $ npm run build
 
 ## Technical Details
 
-- **Monaco Editor Version**: 0.52.0 (loaded from CDN)
+- **CodeMirror Version**: 6.x (bundled)
 - **Supported Languages**: HTML, CSS with syntax highlighting
-- **Theme**: VS Code dark theme
-- **Fallback**: Textarea with basic styling if Monaco fails to load
-- **Split Layout**: Powered by Split.js for resizable panes
-- **Dependencies**: split.js for panel resizing
+- **Theme**: VS Code dark theme via @uiw/codemirror-theme-vscode
+- **Fallback**: Textarea with basic styling if CodeMirror fails to load
+- **Layout**: Accordion style (HTML default active)
+- **Dependencies**: codemirror, @codemirror/lang-html, @codemirror/lang-css, @uiw/codemirror-theme-vscode
 
 ## License
 

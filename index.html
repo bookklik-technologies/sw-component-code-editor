@@ -6,8 +6,8 @@
   <title>GrapesJS Component Code Editor</title>
   <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
   <script src="https://unpkg.com/grapesjs"></script>
-  <link href="dist/grapesjs-component-monaco-editor.min.css" rel="stylesheet">
-  <script src="dist/grapesjs-component-monaco-editor.min.js"></script>
+  <link href="dist/sw-component-code-editor.min.css" rel="stylesheet">
+  <script src="dist/sw-component-code-editor.min.js"></script>
   <script src="https://unpkg.com/grapesjs-parser-postcss"></script>
   <style>
     body,
@@ -96,9 +96,9 @@
       selectorManager: {
         componentFirst: true,
       },
-      plugins: ['grapesjs-component-monaco-editor', 'grapesjs-parser-postcss'],
+      plugins: ['sw-component-code-editor', 'grapesjs-parser-postcss'],
       pluginsOpts: {
-        'grapesjs-component-monaco-editor': {
+        'sw-component-code-editor': {
           /* Test here your options  */
         }
       }

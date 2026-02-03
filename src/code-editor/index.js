@@ -1,9 +1,17 @@
 //Original work Copyright (c) 2018, Duarte Henriques, https://github.com/portablemind/grapesjs-code-editor
 //Modified work Copyright (c) 2020, Brendon Ngirazi, https://github.com/Ju99ernaut/grapesjs-component-code-editor
-//Modified work Copyright (c) 2025, A.Hakim, https://github.com/a-hakim/grapesjs-component-monaco-editor
+//Modified work Copyright (c) 2025, A.Hakim, https://github.com/a-hakim/grapesjs-component-code-editor
 //All rights reserved.
 
-import Split from 'split.js';
+// Split.js removed
+
+import { EditorView, basicSetup } from 'codemirror';
+import { EditorState } from '@codemirror/state';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+import { indentWithTab } from '@codemirror/commands';
+import { keymap } from '@codemirror/view';
 
 export class CodeEditor {
     constructor(editor, opts) {
@@ -15,9 +23,7 @@ export class CodeEditor {
         this.panelViews = opts.appendTo ? this.$(opts.appendTo) :
             this.findWithinEditor(`.${this.pfx}pn-${opts.panelId}`);
         this.isShowing = true;
-        this.monacoInstances = {};
-        this.monacoReady = false;
-        this.loadMonaco();
+        this.codeMirrorInstances = {};
     }
 
     findPanel() {
@@ -30,157 +36,54 @@ export class CodeEditor {
         return this.$(selector, this.editor.getEl());
     }
 
-    loadMonaco() {
-        // Check if Monaco is already loaded
-        if (window.monaco) {
-            this.monacoReady = true;
-            return Promise.resolve();
-        }
-
-        // Check if Monaco is currently being loaded
-        if (window.monacoLoading) {
-            return window.monacoLoading;
-        }
-
-        // Create a global promise to prevent multiple loads
-        window.monacoLoading = new Promise((resolve, reject) => {
-            // Check if loader script is already present
-            if (document.querySelector('script[src*="vs/loader.min.js"]')) {
-                // If script exists but Monaco isn't loaded yet, wait for it
-                const checkMonaco = () => {
-                    if (window.monaco) {
-                        this.configureMonaco();
-                        this.monacoReady = true;
-                        resolve();
-                    } else {
-                        setTimeout(checkMonaco, 100);
-                    }
-                };
-                checkMonaco();
-                return;
-            }
-
-            // Load Monaco Editor from CDN
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs/loader.min.js';
-            script.onload = () => {
-                // Check if require is already configured
-                if (!window.require || !window.require.config) {
-                    console.error('Monaco loader failed to initialize require');
-                    reject(new Error('Monaco loader failed to initialize require'));
-                    return;
-                }
-
-                // Configure paths only if not already configured
-                if (!window.require.s || !window.require.s.contexts || !window.require.s.contexts._.config.paths.vs) {
-                    window.require.config({
-                        paths: {
-                            'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs'
-                        }
-                    });
-                }
-
-                window.require(['vs/editor/editor.main'], () => {
-                    this.configureMonaco();
-                    this.monacoReady = true;
-                    // console.log('Monaco Editor loaded successfully');
-                    resolve();
-                });
-            };
-            script.onerror = () => {
-                console.error('Failed to load Monaco Editor');
-                reject(new Error('Failed to load Monaco Editor'));
-            };
-            document.head.appendChild(script);
-        });
-
-        return window.monacoLoading;
-    }
-
-    configureMonaco() {
-        if (!window.monaco) return;
-
-        // Configure HTML language service
-        window.monaco.languages.html.htmlDefaults.setOptions({
-            format: {
-                tabSize: 2,
-                insertSpaces: true,
-                wrapLineLength: 120,
-                unformatted: 'default: "a, abbr, acronym, b, bdo, big, br, button, cite, code, dfn, em, i, img, input, kbd, label, map, mark, meter, noscript, object, output, q, ruby, s, samp, select, small, span, strong, sub, sup, textarea, time, tt, u, var, wbr"',
-                contentUnformatted: 'pre',
-                indentInnerHtml: false,
-                preserveNewLines: true,
-                maxPreserveNewLines: 2,
-                indentHandlebars: false,
-                endWithNewline: false,
-                extraLiners: 'head, body, /html',
-                wrapAttributes: 'auto'
-            }
-        });
-
-        // Configure CSS language service
-        window.monaco.languages.css.cssDefaults.setOptions({
-            format: {
-                insertSpaces: true,
-                tabSize: 2,
-                newlineBetweenSelectors: true,
-                newlineBetweenRules: true,
-                spaceAroundSelectorSeparator: true,
-                braceStyle: 'collapse',
-                maxPreserveNewLines: 2,
-                preserveNewLines: true
-            }
-        });
-    }
-
     buildCodeEditor(type) {
-        const { editor, opts } = this;
-        
-        // Create unique container ID to prevent conflicts
-        const containerId = `monaco-editor-container-${type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // Create container for CodeMirror
+        const containerId = `codemirror-editor-container-${type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
         const container = document.createElement('div');
         container.style.width = '100%';
         container.style.height = '100%';
-        container.className = `monaco-editor-container-${type}`;
+        container.className = `codemirror-editor-container-${type}`;
         container.id = containerId;
         
         const editorWrapper = {
             container: container,
             type: type,
+            view: null,
             getElement: () => container,
             setContent: (content) => {
-                if (editorWrapper.editor) {
-                    editorWrapper.editor.setValue(content || '');
-                    // Auto-format the code after setting content
-                    setTimeout(() => {
-                        this.formatCodeAutomatically(type, editorWrapper.editor);
-                    }, 100);
+                if (editorWrapper.view) {
+                    const currentContent = editorWrapper.view.state.doc.toString();
+                    if (currentContent !== content) {
+                        editorWrapper.view.dispatch({
+                            changes: {
+                                from: 0,
+                                to: currentContent.length,
+                                insert: content || ''
+                            }
+                        });
+                    }
                 } else {
                     editorWrapper.pendingContent = content;
                 }
             },
             getContent: () => {
-                return editorWrapper.editor ? editorWrapper.editor.getValue() : (editorWrapper.pendingContent || '');
+                return editorWrapper.view ? editorWrapper.view.state.doc.toString() : (editorWrapper.pendingContent || '');
             },
             refresh: () => {
-                if (editorWrapper.editor) {
-                    editorWrapper.editor.layout();
+                if (editorWrapper.view) {
+                    editorWrapper.view.requestMeasure();
                 }
             },
             dispose: () => {
-                if (editorWrapper.editor) {
-                    editorWrapper.editor.dispose();
-                    editorWrapper.editor = null;
+                if (editorWrapper.view) {
+                    editorWrapper.view.destroy();
+                    editorWrapper.view = null;
                 }
             },
-            editor: null,
             pendingContent: ''
         };
 
-        // Set initial loading message
-        container.innerHTML = `<div style="padding: 20px; color: #888; text-align: center; background: #1e1e1e; border: 1px solid #3c3c3c;">Loading Editor...</div>`;
-        
         // Store reference for later initialization
         if (!this.editorWrappers) {
             this.editorWrappers = {};
@@ -190,85 +93,74 @@ export class CodeEditor {
         return editorWrapper;
     }
 
-    createMonacoEditor(editorWrapper, type) {
-        if (!window.monaco) {
-            console.error('Monaco is not available');
-            return;
-        }
-
+    createCodeMirrorEditor(editorWrapper, type) {
         // Check if editor already exists for this wrapper
-        if (editorWrapper.editor) {
-            // console.log(`Monaco editor already exists for ${type}, skipping creation`);
+        if (editorWrapper.view) {
             return;
         }
 
-        // Check if Monaco instance already exists for this type
-        if (this.monacoInstances[type]) {
-            console.log(`Monaco instance already exists for ${type}, disposing old instance`);
-            this.monacoInstances[type].dispose();
-            delete this.monacoInstances[type];
+        // Check if CodeMirror instance already exists for this type
+        if (this.codeMirrorInstances[type]) {
+            this.codeMirrorInstances[type].destroy();
+            delete this.codeMirrorInstances[type];
         }
-
-        // console.log(`Creating Monaco editor for ${type}...`);
         
-        // Clear loading message
+        // Clear container
         editorWrapper.container.innerHTML = '';
 
         try {
-            const monacoEditor = window.monaco.editor.create(editorWrapper.container, {
-                value: editorWrapper.pendingContent || '',
-                language: type === 'html' ? 'html' : 'css',
-                theme: 'vs-dark',
-                automaticLayout: true,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                fontSize: 14,
-                lineNumbers: 'on',
-                roundedSelection: false,
-                scrollbar: {
-                    vertical: 'auto',
-                    horizontal: 'auto'
-                },
-                wordWrap: 'on',
-                formatOnType: true,
-                formatOnPaste: true,
-                ...this.opts.codeViewOptions
+            // Configure language extension based on type
+            const languageExtension = type === 'html' ? html() : css();
+
+            // Create CodeMirror state
+            const state = EditorState.create({
+                doc: editorWrapper.pendingContent || '',
+                extensions: [
+                    basicSetup,
+                    languageExtension,
+                    vscodeDark,
+                    keymap.of([indentWithTab]),
+                    EditorView.theme({
+                        '&': {
+                            height: '100%',
+                            fontSize: '14px'
+                        },
+                        '.cm-scroller': {
+                            fontFamily: "'Consolas', 'Monaco', 'Courier New', monospace",
+                            overflow: 'auto'
+                        },
+                        '.cm-content': {
+                            caretColor: '#fff'
+                        },
+                        '&.cm-focused .cm-cursor': {
+                            borderLeftColor: '#fff'
+                        },
+                        '.cm-gutters': {
+                            backgroundColor: '#1e1e1e',
+                            color: '#858585',
+                            border: 'none'
+                        }
+                    }),
+                    EditorView.lineWrapping,
+                    // Apply user options if provided
+                    ...((this.opts.codeViewOptions && this.opts.codeViewOptions.extensions) || [])
+                ]
             });
 
-            // Add keyboard shortcut for formatting (Ctrl+Shift+F or Cmd+Shift+F)
-            monacoEditor.addAction({
-                id: `format-code-${type}`,
-                label: 'Format Code',
-                keybindings: [
-                    window.monaco.KeyMod.CtrlCmd | window.monaco.KeyMod.Shift | window.monaco.KeyCode.KeyF
-                ],
-                run: () => {
-                    this.formatCodeAutomatically(type, monacoEditor);
-                }
+            // Create CodeMirror view
+            const view = new EditorView({
+                state,
+                parent: editorWrapper.container
             });
 
-            editorWrapper.editor = monacoEditor;
+            editorWrapper.view = view;
             editorWrapper.pendingContent = '';
 
             // Store the instance for later use
-            this.monacoInstances[type] = monacoEditor;
-            
-            // console.log(`Monaco editor created successfully for ${type}`);
-            
-            // Auto-format any pending content
-            if (editorWrapper.pendingContent && editorWrapper.pendingContent.trim()) {
-                setTimeout(() => {
-                    this.formatCodeAutomatically(type, monacoEditor);
-                }, 200);
-            }
-            
-            // Trigger layout after a short delay to ensure proper sizing
-            setTimeout(() => {
-                monacoEditor.layout();
-            }, 100);
+            this.codeMirrorInstances[type] = view;
             
         } catch (error) {
-            console.error(`Failed to create Monaco editor for ${type}:`, error);
+            console.error(`Failed to create CodeMirror editor for ${type}:`, error);
             // Fallback to textarea for this specific editor
             this.createTextareaFallback(editorWrapper, type);
         }
@@ -285,6 +177,8 @@ export class CodeEditor {
         textarea.style.fontSize = '14px';
         textarea.style.resize = 'none';
         textarea.style.outline = 'none';
+        textarea.style.padding = '10px';
+        textarea.style.boxSizing = 'border-box';
         textarea.value = editorWrapper.pendingContent || '';
         
         editorWrapper.container.innerHTML = '';
@@ -304,18 +198,47 @@ export class CodeEditor {
         const btnText = type === 'html' ? opts.htmlBtnText : opts.cssBtnText;
         const cleanCssBtn = (opts.cleanCssBtn && type === 'css') ?
             `<button class="cp-delete-${type} ${pfx}btn-prim">${opts.cleanCssBtnText}</button>` : '';
+        
         section.append($(`
             <div class="codepanel-separator">
                 <div class="codepanel-label">${type}</div>
                 <div class="cp-btn-container">
+                    ${cleanCssBtn}
                     <button class="cp-apply-${type} ${pfx}btn-prim">${btnText}</button>
                 </div>
             </div>`));
+            
         const codeViewerEl = codeViewer.getElement();
-        codeViewerEl.style.height = 'calc(100% - 30px)';
+        codeViewerEl.classList.add('codepanel-content');
+        codeViewerEl.style.height = '100%'; // Content takes full height of parent section
+        
         section.append(codeViewerEl);
         this.codePanel.append(section);
-        return section.get(0);
+        
+        // Add click handler for accordion behavior
+        section.find('.codepanel-separator').on('click', () => this.toggleSection(type));
+        
+        return section;
+    }
+
+    toggleSection(type) {
+        const sections = this.codePanel.find('section');
+        const clickedSection = sections.filter((i, el) => this.$(el).find(`.codepanel-label`).text().toLowerCase() === type);
+        
+        if (clickedSection.hasClass('active')) {
+            // If clicking active section, switch to the other one
+            const otherType = type === 'html' ? 'css' : 'html';
+            sections.removeClass('active');
+            const otherSection = sections.filter((i, el) => this.$(el).find(`.codepanel-label`).text().toLowerCase() === otherType);
+            otherSection.addClass('active');
+        } else {
+            // Activate clicked section
+            sections.removeClass('active');
+            clickedSection.addClass('active');
+        }
+        
+        // Refresh the editors when switching
+        setTimeout(() => this.refreshEditors(), 300); // Wait for transition
     }
 
     buildCodePanel() {
@@ -339,16 +262,17 @@ export class CodeEditor {
         this.codePanel.find('.cp-apply-css')
             .on('click', this.updateCss.bind(this));
 
-        this.opts.cleanCssBtn && this.codePanel.find('.cp-delete-css')
-            .on('click', this.deleteSelectedCss.bind(this));
+        // Set HTML as active default
+        this.toggleSection('html');
 
-        Split(sections, {
-            direction: 'vertical',
-            sizes: [50, 50],
-            minSize: 100,
-            gutterSize: 1,
-            onDragEnd: this.refreshEditors.bind(this),
-        });
+        this.opts.cleanCssBtn && this.codePanel.find('.cp-delete-css')
+            .on('click', (e) => {
+                e.stopPropagation(); // Prevent accordion toggle
+                this.deleteSelectedCss(e);
+            });
+            
+        // Prevent accordion toggle when clicking Apply/Delete buttons
+        this.codePanel.find('.cp-btn-container button').on('click', (e) => e.stopPropagation());
 
         editor.on('component:update', model => this.updateEditorContents());
         editor.on('stop:preview', () => {
@@ -357,35 +281,18 @@ export class CodeEditor {
             }
         });
 
-        // Initialize Monaco editors after panel is built
-        this.initializeMonacoEditorsWhenReady();
+        // Initialize CodeMirror editors after panel is built
+        this.initializeCodeMirrorEditors();
     }
 
-    initializeMonacoEditorsWhenReady() {
-        if (this.monacoReady && window.monaco) {
-            this.initializeMonacoEditors();
-        } else {
-            // Wait for Monaco to load
-            this.loadMonaco().then(() => {
-                this.initializeMonacoEditors();
-            }).catch(error => {
-                console.error('Failed to initialize Monaco editors:', error);
-                // Fallback to basic textarea
-                this.fallbackToTextarea();
-            });
-        }
-    }
-
-    initializeMonacoEditors() {
-        console.log('Initializing Monaco editors...');
-        
+    initializeCodeMirrorEditors() {
         // Wait a bit for DOM to be ready
         setTimeout(() => {
             if (this.editorWrappers) {
                 Object.keys(this.editorWrappers).forEach(type => {
                     const wrapper = this.editorWrappers[type];
                     if (wrapper && wrapper.container.parentElement) {
-                        this.createMonacoEditor(wrapper, type);
+                        this.createCodeMirrorEditor(wrapper, type);
                     }
                 });
             }
@@ -396,28 +303,8 @@ export class CodeEditor {
         if (this.editorWrappers) {
             Object.keys(this.editorWrappers).forEach(type => {
                 const wrapper = this.editorWrappers[type];
-                if (wrapper && wrapper.container) {
-                    const textarea = document.createElement('textarea');
-                    textarea.style.width = '100%';
-                    textarea.style.height = '100%';
-                    textarea.style.background = '#1e1e1e';
-                    textarea.style.color = '#cccccc';
-                    textarea.style.border = '1px solid #3c3c3c';
-                    textarea.style.fontFamily = 'monospace';
-                    textarea.style.fontSize = '14px';
-                    textarea.style.resize = 'none';
-                    textarea.style.outline = 'none';
-                    textarea.value = wrapper.pendingContent || '';
-                    
-                    wrapper.container.innerHTML = '';
-                    wrapper.container.appendChild(textarea);
-                    
-                    // Update wrapper methods
-                    wrapper.setContent = (content) => {
-                        textarea.value = content || '';
-                    };
-                    wrapper.getContent = () => textarea.value;
-                    wrapper.refresh = () => {};
+                if (wrapper && wrapper.container && !wrapper.view) {
+                    this.createTextareaFallback(wrapper, type);
                 }
             });
         }
@@ -426,24 +313,14 @@ export class CodeEditor {
 
     showCodePanel() {
         this.isShowing = true;
-        this.codePanel.css('display', 'block');
+        this.codePanel.css('display', 'flex');
         
-        // Initialize Monaco editors if not already done
-        if (!this.monacoInstances.html && !this.monacoInstances.css) {
-            this.initializeMonacoEditorsWhenReady();
+        // Initialize CodeMirror editors if not already done
+        if (!this.codeMirrorInstances.html || !this.codeMirrorInstances.css) {
+            this.initializeCodeMirrorEditors();
         }
         
         this.updateEditorContents();
-        
-        // Auto-format existing content when showing the panel
-        setTimeout(() => {
-            if (this.monacoInstances.html && this.monacoInstances.html.getValue().trim()) {
-                this.formatCodeAutomatically('html', this.monacoInstances.html);
-            }
-            if (this.monacoInstances.css && this.monacoInstances.css.getValue().trim()) {
-                this.formatCodeAutomatically('css', this.monacoInstances.css);
-            }
-        }, 300);
         
         // make sure editor is aware of width change after the 300ms effect ends
         setTimeout(this.refreshEditors.bind(this), 320);
@@ -469,72 +346,32 @@ export class CodeEditor {
         this.cssCodeEditor.refresh();
     }
 
-    formatCodeAutomatically(type, monacoEditor) {
-        if (!monacoEditor) return;
-
-        try {
-            // Try Monaco's built-in formatting first
-            const action = monacoEditor.getAction('editor.action.formatDocument');
-            if (action) {
-                action.run().then(() => {
-                    // console.log(`Code auto-formatted successfully for ${type}`);
-                }).catch(error => {
-                    console.warn(`Monaco auto-formatting failed for ${type}, using fallback:`, error);
-                    this.fallbackFormat(type, monacoEditor);
-                });
-            } else {
-                // Use fallback if action not available
-                this.fallbackFormat(type, monacoEditor);
-            }
-        } catch (error) {
-            console.error(`Failed to auto-format ${type} code:`, error);
-            // Fallback to basic formatting if Monaco formatting fails
-            this.fallbackFormat(type, monacoEditor);
-        }
-    }
-
-    fallbackFormat(type, monacoEditor) {
-        const content = monacoEditor.getValue();
-        if (!content.trim()) return;
-
-        let formattedContent = '';
-        
-        if (type === 'html') {
-            formattedContent = this.formatHtml(content);
-        } else if (type === 'css') {
-            formattedContent = this.formatCss(content);
-        }
-
-        if (formattedContent && formattedContent !== content) {
-            monacoEditor.setValue(formattedContent);
-        }
-    }
-
     formatHtml(html) {
+        if (!html || !html.trim()) return html;
         try {
-            // Basic HTML formatting with better indentation
+            // Basic HTML formatting with proper indentation
             let formatted = html
                 .replace(/>\s*</g, '><') // Remove whitespace between tags
                 .replace(/></g, '>\n<')  // Add newlines between tags
                 .split('\n')
-                .filter(line => line.trim())
-                .map((line, index, array) => {
-                    const trimmed = line.trim();
+                .filter(function(line) { return line.trim(); })
+                .map(function(line, index, array) {
+                    var trimmed = line.trim();
                     if (!trimmed) return '';
                     
-                    let indent = 0;
+                    var indent = 0;
                     
                     // Calculate indentation level
-                    for (let i = 0; i < index; i++) {
-                        const prevLine = array[i].trim();
+                    for (var i = 0; i < index; i++) {
+                        var prevLine = array[i].trim();
                         if (!prevLine) continue;
                         
                         // Count opening tags (not self-closing)
-                        const openTags = (prevLine.match(/<[^\/!][^>]*(?<!\/\s*)>/g) || []).length;
+                        var openTags = (prevLine.match(/<[^\/!][^>]*(?<!\/\s*)>/g) || []).length;
                         // Count closing tags
-                        const closeTags = (prevLine.match(/<\/[^>]*>/g) || []).length;
-                        // Count self-closing tags (shouldn't affect indentation)
-                        const selfClosingTags = (prevLine.match(/<[^>]*\/>/g) || []).length;
+                        var closeTags = (prevLine.match(/<\/[^>]*>/g) || []).length;
+                        // Count self-closing tags
+                        var selfClosingTags = (prevLine.match(/<[^>]*\/>/g) || []).length;
                         
                         indent += (openTags - selfClosingTags) - closeTags;
                     }
@@ -556,9 +393,10 @@ export class CodeEditor {
     }
 
     formatCss(css) {
+        if (!css || !css.trim()) return css;
         try {
             // Enhanced CSS formatting
-            let formatted = css
+            var formatted = css
                 // Remove extra whitespace
                 .replace(/\s+/g, ' ')
                 .trim()
@@ -568,21 +406,13 @@ export class CodeEditor {
                 .replace(/;\s*/g, ';\n  ')
                 // Format closing braces
                 .replace(/\s*}\s*/g, '\n}\n\n')
-                // Format comma-separated selectors
-                .replace(/,\s*/g, ',\n')
                 // Clean up multiple newlines
                 .replace(/\n\s*\n\s*\n/g, '\n\n')
                 // Remove trailing spaces from properties
                 .replace(/\s+;/g, ';')
                 // Clean up the last closing brace
-                .replace(/}\n\n$/, '}')
+                .replace(/}\n\n$/g, '}')
                 .trim();
-            
-            // Additional cleanup for nested rules or at-rules
-            formatted = formatted
-                .replace(/(@[^{]+{\s*)/g, '$1\n  ')
-                .replace(/(@media[^{]+{\s*)/g, '$1\n  ')
-                .replace(/(@keyframes[^{]+{\s*)/g, '$1\n  ');
             
             return formatted;
         } catch (error) {
@@ -592,7 +422,7 @@ export class CodeEditor {
     }
 
     updateHtml(e) {
-        e?.preventDefault();
+        if (e) e.preventDefault();
         const { editor, component } = this;
         let htmlCode = this.htmlCodeEditor.getContent().trim();
         if (!htmlCode || htmlCode === this.previousHtmlCode) return;
@@ -625,7 +455,7 @@ export class CodeEditor {
     }
 
     updateCss(e) {
-        e?.preventDefault();
+        if (e) e.preventDefault();
         const cssCode = this.cssCodeEditor.getContent().trim();
         if (!cssCode || cssCode === this.previousCssCode) return;
         this.previousCssCode = cssCode;
@@ -634,18 +464,23 @@ export class CodeEditor {
     }
 
     deleteSelectedCss(e) {
-        e?.preventDefault();
-        const monacoEditor = this.monacoInstances.css;
-        if (!monacoEditor) return;
+        if (e) e.preventDefault();
+        const view = this.codeMirrorInstances.css;
+        if (!view) return;
         
-        const selection = monacoEditor.getSelection();
-        if (selection && !selection.isEmpty()) {
-            const selectedText = monacoEditor.getModel().getValueInRange(selection);
+        const state = view.state;
+        const selection = state.selection.main;
+        
+        if (!selection.empty) {
+            const selectedText = state.sliceDoc(selection.from, selection.to);
             this.parseRemove(selectedText);
-            monacoEditor.executeEdits('', [{
-                range: selection,
-                text: ''
-            }]);
+            view.dispatch({
+                changes: {
+                    from: selection.from,
+                    to: selection.to,
+                    insert: ''
+                }
+            });
         }
     }
 
@@ -675,32 +510,26 @@ export class CodeEditor {
 
         this.component = this.editor.getSelected();
         if (this.component) {
-            const htmlContent = this.getComponentHtml(this.component);
-            const cssContent = this.editor.CodeManager.getCode(this.component, 'css', {
+            var htmlContent = this.getComponentHtml(this.component);
+            var cssContent = this.editor.CodeManager.getCode(this.component, 'css', {
                 cssc: this.editor.Css
             });
             
-            // Set content without auto-formatting first to avoid double formatting
-            if (this.htmlCodeEditor.editor) {
-                this.htmlCodeEditor.editor.setValue(htmlContent || '');
-                if (htmlContent && htmlContent.trim()) {
-                    setTimeout(() => {
-                        this.formatCodeAutomatically('html', this.htmlCodeEditor.editor);
-                    }, 100);
-                }
+            // Format the content before setting
+            var formattedHtml = this.formatHtml(htmlContent || '');
+            var formattedCss = this.formatCss(cssContent || '');
+            
+            // Set formatted content
+            if (this.htmlCodeEditor.view) {
+                this.htmlCodeEditor.setContent(formattedHtml);
             } else {
-                this.htmlCodeEditor.pendingContent = htmlContent;
+                this.htmlCodeEditor.pendingContent = formattedHtml;
             }
             
-            if (this.cssCodeEditor.editor) {
-                this.cssCodeEditor.editor.setValue(cssContent || '');
-                if (cssContent && cssContent.trim()) {
-                    setTimeout(() => {
-                        this.formatCodeAutomatically('css', this.cssCodeEditor.editor);
-                    }, 150);
-                }
+            if (this.cssCodeEditor.view) {
+                this.cssCodeEditor.setContent(formattedCss);
             } else {
-                this.cssCodeEditor.pendingContent = cssContent;
+                this.cssCodeEditor.pendingContent = formattedCss;
             }
         }
     }
@@ -717,24 +546,24 @@ export class CodeEditor {
         result += html;
 
         const js = opts.editJs ? component.getScriptString() : '';
-        result += js ? `<script>${js}</script>` : '';
+        result += js ? `<script>${js}<\/script>` : '';
 
         return result;
     }
 
     dispose() {
-        // Clean up Monaco Editor instances
+        // Clean up CodeMirror instances
         if (this.htmlCodeEditor && this.htmlCodeEditor.dispose) {
             this.htmlCodeEditor.dispose();
         }
         if (this.cssCodeEditor && this.cssCodeEditor.dispose) {
             this.cssCodeEditor.dispose();
         }
-        if (this.monacoInstances.html) {
-            this.monacoInstances.html.dispose();
+        if (this.codeMirrorInstances.html) {
+            this.codeMirrorInstances.html.destroy();
         }
-        if (this.monacoInstances.css) {
-            this.monacoInstances.css.dispose();
+        if (this.codeMirrorInstances.css) {
+            this.codeMirrorInstances.css.destroy();
         }
         
         // Clear editor wrappers
@@ -748,7 +577,7 @@ export class CodeEditor {
         }
         
         // Clear instances
-        this.monacoInstances = {};
+        this.codeMirrorInstances = {};
         
         // Clear code panel
         if (this.codePanel) {
